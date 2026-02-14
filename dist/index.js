@@ -20,74 +20,93 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // src/index.ts
 var index_exports = {};
 __export(index_exports, {
-  MPtripe: () => MPtripe2,
-  ProductsResource: () => ProductsResource,
-  Resource: () => Resource
+  MPtripe: () => MPtripe
 });
 module.exports = __toCommonJS(index_exports);
 
+// src/resource.ts
+var Resource = class {
+  constructor(client) {
+    this.client = client;
+  }
+};
+
 // src/resources/index.ts
-var PlansResource = class extends Resource {
+var IntegrationsResource = class extends Resource {
   /**
-   * List all plans
+   * List all integrations
    */
   async list() {
-    return this.client.request("/plans");
+    return this.client.request("/integrations");
   }
+};
+var ProductsResource = class extends Resource {
   /**
-   * Retrieve a specific plan
+   * List all products for an integration
    */
-  async retrieve(id) {
-    return this.client.request(`/plans/${id}`);
+  async list(integrationId) {
+    return this.client.request(`/integrations/${integrationId}/products/list`);
   }
+};
+var CheckoutResource = class extends Resource {
   /**
-   * Search plans (e.g. by product)
+   * Create a checkout session
    */
-  async search(params) {
-    const query = new URLSearchParams(params).toString();
-    return this.client.request(`/plans/search?${query}`);
+  async create(integrationId, data) {
+    return this.client.request(`/integrations/${integrationId}/checkout`, {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
+  }
+};
+var CustomersResource = class extends Resource {
+  /**
+   * List all customers for an integration
+   */
+  async list(integrationId) {
+    return this.client.request(`/integrations/${integrationId}/customers`);
+  }
+};
+var PaymentsResource = class extends Resource {
+  /**
+   * List all payments for an integration
+   */
+  async list(integrationId) {
+    return this.client.request(`/integrations/${integrationId}/payments`);
   }
 };
 var SubscriptionsResource = class extends Resource {
   /**
-   * List all subscriptions
+   * Activate a free subscription
    */
-  async list() {
-    return this.client.request("/subscriptions");
-  }
-  /**
-   * Retrieve a specific subscription
-   */
-  async retrieve(id) {
-    return this.client.request(`/subscriptions/${id}`);
-  }
-  /**
-   * Cancel a subscription
-   */
-  async cancel(id) {
-    return this.client.request(`/subscriptions/${id}/cancel`, {
-      method: "POST"
+  async createFree(integrationId, data) {
+    return this.client.request(`/integrations/${integrationId}/subscriptions/free`, {
+      method: "POST",
+      body: JSON.stringify(data)
     });
   }
 };
 
 // src/config.ts
 var CONFIG = {
-  DEFAULT_BASE_URL: "https://api.mptripe.com/v1",
+  DEFAULT_BASE_URL: "https://www.mptripe.com/api",
   VERSION: "0.0.1",
   USER_AGENT: "MPtripe-JS/0.0.1"
 };
 
 // src/index.ts
-var MPtripe2 = class {
-  constructor(apiKey) {
+var MPtripe = class {
+  constructor(apiKey, options = {}) {
     this.apiKey = apiKey;
-    this.baseUrl = CONFIG.DEFAULT_BASE_URL;
+    this.baseUrl = options.baseUrl || CONFIG.DEFAULT_BASE_URL;
     if (!this.apiKey) {
       throw new Error("MPtripe: API Key is required");
     }
+    this.integrations = new IntegrationsResource(this);
     this.products = new ProductsResource(this);
-    this.plans = new PlansResource(this);
+    this.checkout = new CheckoutResource(this);
+    this.customers = new CustomersResource(this);
+    this.payments = new PaymentsResource(this);
     this.subscriptions = new SubscriptionsResource(this);
   }
   /**
@@ -117,28 +136,7 @@ var MPtripe2 = class {
     return response.json();
   }
 };
-var Resource = class {
-  constructor(client) {
-    this.client = client;
-  }
-};
-var ProductsResource = class extends Resource {
-  /**
-   * List all products
-   */
-  async list() {
-    return this.client.request("/products");
-  }
-  /**
-   * Retrieve a specific product
-   */
-  async retrieve(id) {
-    return this.client.request(`/products/${id}`);
-  }
-};
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
-  MPtripe,
-  ProductsResource,
-  Resource
+  MPtripe
 });
